@@ -1,0 +1,96 @@
+<!DOCTYPE HTML>
+<html>
+    <head>  
+   
+        <script src="js/vertx/sockjs.min.js"></script>
+        <script src="js/vertx/vertxbus.js"></script> 
+ 
+        <script type="text/javascript">
+
+            var colAdps = [{y: 0.0}];
+            var colBdps = [{y: 0.0}];
+            var stompClient = null;
+            var dataLength = 500;
+            var colA;
+            var colB;
+
+            window.onload = function () {
+
+                var eb = new vertx.EventBus("http://" + location.host + "/eventbus");
+                eb.onopen = function () {
+                    console.log("open");
+                    eb.registerHandler("dashboard", function (data) {
+
+                        console.log(data);
+                        var message = JSON.parse(data);
+                        colA = message.columnA;
+                        colB = message.columnB;
+
+                        for (i = 0; i < colA.length; i++) {
+                            colAdps.push({
+                                y: colA[i]
+                            });
+                            colBdps.push({
+                                y: colB[i]
+                            });
+                        }
+                        drawChart(colAdps, colBdps);
+                    });
+                };
+
+
+                var drawChart = function (colAdps, colBdps) {
+                    var chart = new CanvasJS.Chart("chartContainer", {
+                        animationEnabled: true, animationDuration: 10, zoomEnabled: true,
+                        title: {text: "EKG Real-time Reconstruction"},
+                        /* axisY:{
+                         lineThickness:0,
+                         tickThickness:0,
+                         valueFormatString:" ",//space
+                         }, */
+                        axisX: {
+                            lineThickness: 0,
+                            tickThickness: 0,
+                            valueFormatString: " ", //space
+                        },
+                        data: [
+                            {
+                                type: "line",
+                                connectNullData: true,
+                                dataPoints: colAdps
+                            },
+                            {
+                                type: "line",
+                                connectNullData: true,
+                                dataPoints: colBdps
+                            }
+                        ]
+                    });
+
+                    if (colAdps.length > dataLength)
+                    {
+                        colAdps.shift();
+                        colBdps.shift();
+
+                    }
+                    chart.render();
+                }
+
+                /*  		var updateInterval = 1000;
+                 setInterval(function(){drawChart(colAdps,colBdps)}, updateInterval);  */
+
+            }
+        </script>
+
+        <script type="text/javascript" src="js/canvasjs.min.js"></script>
+        <script type="text/javascript" src="js/sockjs.min.js"></script>
+        <script type="text/javascript" src="js/stomp.min.js"></script>
+        <script type="text/javascript" src="js/jquery-3.1.1.min.js"></script>
+
+
+    </head>
+    <body>
+        <div id="chartContainer" style="height: 300px; width: 100%;">
+        </div>
+    </body>
+</html>
